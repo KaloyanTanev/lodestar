@@ -461,23 +461,28 @@ export class BeaconChain implements IBeaconChain {
     slot: Slot,
     opts?: StateGetOpts
   ): Promise<{state: BeaconStateAllForks; executionOptimistic: boolean; finalized: boolean} | null> {
+    this.logger.info("Get state by slot initiated");
     const finalizedBlock = this.forkChoice.getFinalizedBlock();
 
     if (slot < finalizedBlock.slot) {
+      this.logger.info("slot < finalizedBlock.slot true");
       // request for finalized state not supported in this API
       // fall back to caller to look in db or getHistoricalStateBySlot
       return null;
     }
 
     if (opts?.allowRegen) {
+      this.logger.info("opts?.allowRegen true");
       // Find closest canonical block to slot, then trigger regen
       const block = this.forkChoice.getCanonicalBlockClosestLteSlot(slot) ?? finalizedBlock;
+      this.logger.info("block fetched");
       const state = await this.regen.getBlockSlotState(
         block.blockRoot,
         slot,
         {dontTransferCache: true},
         RegenCaller.restApi
       );
+      this.logger.info("state fetched");
       return {
         state,
         executionOptimistic: isOptimisticBlock(block),
@@ -487,11 +492,14 @@ export class BeaconChain implements IBeaconChain {
 
     // Just check if state is already in the cache. If it's not dialed to the correct slot,
     // do not bother in advancing the state. restApiCanTriggerRegen == false means do no work
+    this.logger.info("getCanonicalBlockAtSlot");
     const block = this.forkChoice.getCanonicalBlockAtSlot(slot);
     if (!block) {
+      this.logger.info("no block");
       return null;
     }
 
+    this.logger.info("getStateSync");
     const state = this.regen.getStateSync(block.stateRoot);
     return (
       state && {

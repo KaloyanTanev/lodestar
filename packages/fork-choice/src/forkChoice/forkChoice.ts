@@ -945,18 +945,22 @@ export class ForkChoice implements IForkChoice {
 
   getCanonicalBlockAtSlot(slot: Slot): ProtoBlock | null {
     if (slot > this.head.slot) {
+      this.logger?.info("slot > this.head.slot");
       return null;
     }
 
     if (slot === this.head.slot) {
+      this.logger?.info("slot === this.head.slot");
       return this.head;
     }
 
     for (const block of this.protoArray.iterateAncestorNodes(this.head.blockRoot)) {
       if (block.slot === slot) {
+        this.logger?.info("block.slot === slot");
         return block;
       }
     }
+    this.logger?.info("no if clause triggered");
     return null;
   }
 
